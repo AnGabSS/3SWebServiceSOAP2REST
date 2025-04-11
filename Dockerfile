@@ -1,24 +1,28 @@
 # Etapa de build
-FROM maven:3.9.6-eclipse-temurin-17 AS build
-
+FROM gradle:8.5-jdk17 AS build
 WORKDIR /app
 
-# Copia o projeto
-COPY pom.xml .
-COPY src ./src
+# Copia apenas arquivos essenciais primeiro para cache
+COPY build.gradle.kts settings.gradle.kts gradlew gradlew.bat /app/
+COPY gradle /app/gradle
 
-# Realiza o build do projeto
-RUN mvn clean package -DskipTests
+# Baixa dependências antes de copiar o código-fonte
+RUN ./gradlew build -x test || return 0
+
+# Agora copia o restante do projeto
+COPY . /app
+
+# Build da aplicação
+RUN ./gradlew build -x test
 
 # Etapa de runtime
 FROM eclipse-temurin:17-jdk
-
 WORKDIR /app
 
-# Copia o JAR gerado na etapa de build
-COPY --from=build /app/target/*.jar app.jar
+# Copia o jar construído
+COPY --from=build /app/build/libs/*.jar app.jar
 
-# Expõe a porta padrão do Spring Boot
+# Expõe a porta usada pela aplicação
 EXPOSE 8080
 
 # Comando para rodar a aplicação
