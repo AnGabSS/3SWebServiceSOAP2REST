@@ -2,28 +2,25 @@
 FROM gradle:8.5-jdk17 AS build
 WORKDIR /app
 
-# Copia apenas arquivos essenciais primeiro para cache
-COPY build.gradle.kts settings.gradle.kts gradlew gradlew.bat /app/
+# Copia arquivos essenciais do Gradle
+COPY build.gradle settings.gradle gradlew gradlew.bat /app/
 COPY gradle /app/gradle
 
-# Baixa dependências antes de copiar o código-fonte
-RUN ./gradlew build -x test || return 0
-
-# Agora copia o restante do projeto
+# Copia o restante do código fonte
 COPY . /app
 
-# Build da aplicação
+# Executa o build, ignorando os testes
 RUN ./gradlew build -x test
 
 # Etapa de runtime
 FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
-# Copia o jar construído
+# Copia o .jar gerado
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Expõe a porta usada pela aplicação
+# Expõe a porta
 EXPOSE 8080
 
-# Comando para rodar a aplicação
+# Comando para iniciar a aplicação
 ENTRYPOINT ["java", "-jar", "app.jar"]
