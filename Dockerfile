@@ -9,6 +9,8 @@ COPY gradle /app/gradle
 # Copia o restante do código fonte
 COPY . /app
 
+RUN chmod +x ./gradlew
+
 # Executa o build, ignorando os testes
 RUN ./gradlew build -x test
 
