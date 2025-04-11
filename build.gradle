@@ -1,0 +1,54 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.4.4'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.tech.padawan'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation("javax.xml.ws:jaxws-api:2.3.1")
+	implementation("javax.jws:javax.jws-api:1.1")
+	implementation('com.sun.xml.ws:jaxws-rt:2.3.3') // Runtime de JAX-WS
+	implementation 'com.sun.xml.messaging.saaj:saaj-impl:1.5.2'
+	implementation 'com.sun.xml.bind:jaxb-impl:2.3.3' // Implementação do JAXB
+	implementation 'javax.xml.bind:jaxb-api:2.3.1' // API do JAXB
+	implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.3'
+	implementation("com.fasterxml.jackson.core:jackson-core:2.18.3")
+	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.18.3")
+	implementation("com.google.code.gson:gson:2.12.1")
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+
+tasks.register('generateWsdl') {
+	doLast {
+		def wsdlURL = 'https://3stecnologia.eti.br/data_export/data_export.asmx?wsdl'
+		def outputDir = file("$buildDir/generated-sources/wsdl")
+		def packageName = 'com.tech.padawan.ServiceSoapToRest'
+		outputDir.mkdirs()
+		def command = "wsimport -s ${outputDir.absolutePath} -p ${packageName} ${wsdlURL}"
+		exec { commandLine = command.split(' ') }
+	}
+}
