@@ -73,6 +73,8 @@ public class Posicao {
     @JsonProperty("Hourmeter")
     private String hourmeter;
 
+    private String local = null;
+
     // Construtor padrão
     public Posicao() {
     }
@@ -260,6 +262,14 @@ public class Posicao {
 
     public void setHourmeter(String hourmeter) {
         this.hourmeter = hourmeter;
+    }
+
+    public String getLocal() {
+        return local;
+    }
+
+    public void setLocal(String local) {
+        this.local = local;
     }
 }
 

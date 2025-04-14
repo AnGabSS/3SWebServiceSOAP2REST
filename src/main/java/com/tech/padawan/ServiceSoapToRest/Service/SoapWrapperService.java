@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.tech.padawan.ServiceSoapToRest.Model.Cerca;
 import com.tech.padawan.ServiceSoapToRest.Model.Posicao;
 import com.tech.padawan.ServiceSoapToRest.Model.Veiculo;
 import com.tech.padawan.ServiceSoapToRest.Parser.PosicaoParser;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class SoapWrapperService {
@@ -40,6 +42,20 @@ public class SoapWrapperService {
         JsonMapper jsonMapper = new JsonMapper();
         String json = jsonMapper.writeValueAsString(node);
         List<Posicao> posicoes = PosicaoParser.parsePosicao(json);
+
+        CercasService cercasService = new CercasService();
+        List<Cerca> cercas = cercasService.getCercas();
+
+        List<Posicao> atualizadas = posicoes.stream()
+                .map(posicao -> {
+                    String local = cercasService.getLocalByEndereco(cercas, posicao);
+                    if (local != null && !local.isEmpty()) {
+                        posicao.setLocal(local);
+                    }
+                    return posicao;
+                })
+                .collect(Collectors.toList());
+
         return posicoes;
     }
 }
