@@ -11,6 +11,7 @@ import com.tech.padawan.ServiceSoapToRest.Parser.PosicaoParser;
 import com.tech.padawan.ServiceSoapToRest.Parser.VeiculoParser;
 import com.tech.padawan.ServiceSoapToRest.wsdl.DataExport;
 import com.tech.padawan.ServiceSoapToRest.wsdl.DataExportSoap;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -21,6 +22,10 @@ import java.util.stream.Collectors;
 public class SoapWrapperService {
     DataExport service = new DataExport(); // classe gerada
     DataExportSoap port = service.getDataExportSoap();
+
+    @Autowired
+    CercasService cercasService;
+
 
     public List<Veiculo> getVeiculos(String login, String senha) throws Exception {
         String resultadoXml = port.listaVeiculos(login, senha);
@@ -43,7 +48,6 @@ public class SoapWrapperService {
         String json = jsonMapper.writeValueAsString(node);
         List<Posicao> posicoes = PosicaoParser.parsePosicao(json);
 
-        CercasService cercasService = new CercasService();
         List<Cerca> cercas = cercasService.getCercas();
 
         List<Posicao> atualizadas = posicoes.stream()

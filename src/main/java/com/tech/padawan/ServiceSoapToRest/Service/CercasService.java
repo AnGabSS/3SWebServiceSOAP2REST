@@ -4,11 +4,15 @@ import com.tech.padawan.ServiceSoapToRest.Model.Cerca;
 import com.tech.padawan.ServiceSoapToRest.Model.Posicao;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -21,49 +25,52 @@ public class CercasService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
-    private String path = "C:\\Users\\angelo.gabriel\\Documents\\ws-intellij\\3sServiceSoapToRest\\src\\main\\java\\com\\tech\\padawan\\ServiceSoapToRest\\Public\\cercas.xlsx";
+    private final ResourceLoader resourceLoader;
+    private final String filePath;
 
-    public CercasService(){};
+    public CercasService(ResourceLoader resourceLoader,
+                         @Value("${cercas.file.path}") String filePath) {
+        this.resourceLoader = resourceLoader;
+        this.filePath = filePath;
+    }
+
 
     public List<Cerca> getCercas() throws IOException {
         List<Cerca> cercas = new ArrayList<>();
-        FileInputStream file = new FileInputStream(path); // Substituir pelo caminho real
-        Workbook workbook = new XSSFWorkbook(file);
-        Sheet sheet = workbook.getSheetAt(0);
 
-        // Pular o cabeçalho, se existir (começa do índice 1)
-        boolean firstRow = true;
+        // Carrega o recurso a partir do classpath
+        Resource resource = resourceLoader.getResource(filePath);
+        try (InputStream file = resource.getInputStream();
+             Workbook workbook = new XSSFWorkbook(file)) {
 
-        for (Row row : sheet) {
-            if (firstRow) {
-                firstRow = false;
-                continue;
-            }
+            Sheet sheet = workbook.getSheetAt(0);
+            boolean firstRow = true;
 
-            Cerca cerca = new Cerca();
+            for (Row row : sheet) {
+                if (firstRow) {
+                    firstRow = false;
+                    continue;
+                }
 
-            try {
-                cerca.setFrota(getCellValueAsString(row.getCell(0)));
-                cerca.setPlaca(getCellValueAsString(row.getCell(1)));
-                cerca.setTempoNoStatus(getCellValueAsString(row.getCell(2)));
-                cerca.setStatus(getCellValueAsString(row.getCell(3)));
+                try {
+                    Cerca cerca = new Cerca();
+                    cerca.setFrota(getCellValueAsString(row.getCell(0)));
+                    cerca.setPlaca(getCellValueAsString(row.getCell(1)));
+                    cerca.setTempoNoStatus(getCellValueAsString(row.getCell(2)));
+                    cerca.setStatus(getCellValueAsString(row.getCell(3)));
+                    cerca.setDataAlteracaoStatus(parseDateTime(row.getCell(4)));
+                    cerca.setBateria(getCellValueAsDouble(row.getCell(5)));
+                    cerca.setLocal(getCellValueAsString(row.getCell(6)));
+                    cerca.setUltimaComunicacao(parseDateTime(row.getCell(7)));
+                    cerca.setEndereco(getCellValueAsString(row.getCell(8)));
+                    cerca.setFrete(getCellValueAsDouble(row.getCell(9)));
 
-                cerca.setDataAlteracaoStatus(parseDateTime(row.getCell(4)));
-                cerca.setBateria(getCellValueAsDouble(row.getCell(5)));
-                cerca.setLocal(getCellValueAsString(row.getCell(6)));
-                cerca.setUltimaComunicacao(parseDateTime(row.getCell(7)));
-                cerca.setEndereco(getCellValueAsString(row.getCell(8)));
-                cerca.setFrete(getCellValueAsDouble(row.getCell(9)));
-
-                cercas.add(cerca);
-            } catch (Exception e) {
-                // Log e continue caso tenha erro de parsing em alguma linha
-                System.err.println("Erro ao processar linha " + row.getRowNum() + ": " + e.getMessage());
+                    cercas.add(cerca);
+                } catch (Exception e) {
+                    System.err.println("Erro ao processar linha " + row.getRowNum() + ": " + e.getMessage());
+                }
             }
         }
-
-        workbook.close();
-        file.close();
 
         return cercas;
     }
